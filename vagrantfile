@@ -1,0 +1,25 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box_check_update = false
+  config.vm.provider 'virtualbox' do |vb|
+   vb.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 1000 ]
+  end
+  config.vm.synced_folder ".", "/vagrant", type: "rsync"
+  $instances = 3
+  (1..$instances).each do |i|
+    config.vm.define "NIM#{i}" do |node|
+      node.vm.box = "centos/7"
+      node.vm.hostname = "NIM#{i}"
+      ip = "172.17.10.#{i+200}"
+      node.vm.network "private_network", ip: ip
+      node.vm.provider "virtualbox" do |vb|
+        vb.memory = "2048"
+        vb.cpus = 1
+        vb.name = "NIM#{i}"
+      end
+      node.vm.provision "shell", path: "install.sh", args: [i, ip]
+    end
+  end
+end
